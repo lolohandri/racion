@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Тижневий раціон</title>
+<style>
+  :root {
+    --green: #1D9E75;
+    --green-light: #E1F5EE;
+    --green-dark: #085041;
+    --blue: #378ADD;
+    --blue-light: #E6F1FB;
+    --blue-dark: #0C447C;
+    --amber: #EF9F27;
+    --amber-light: #FAEEDA;
+    --amber-dark: #633806;
+    --gray: #888780;
+    --gray-light: #F1EFE8;
+    --gray-dark: #444441;
+    --purple: #7F77DD;
+    --purple-light: #EEEDFE;
+    --purple-dark: #3C3489;
+    --text: #1a1a1a;
+    --text-muted: #666;
+    --border: #e8e8e8;
+    --bg: #f7f7f5;
+    --card: #ffffff;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif; background: var(--bg); color: var(--text); padding: 0 0 40px; font-size: 15px; line-height: 1.5; }
+
+  .hero { background: linear-gradient(135deg, #0F6E56 0%, #1D9E75 60%, #5DCAA5 100%); padding: 52px 20px 32px; color: white; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; top: -40px; right: -40px; width: 180px; height: 180px; border-radius: 50%; background: rgba(255,255,255,0.08); }
+  .hero::after { content: ''; position: absolute; bottom: -60px; left: -20px; width: 220px; height: 220px; border-radius: 50%; background: rgba(255,255,255,0.05); }
+  .hero-label { font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.75; margin-bottom: 6px; }
+  .hero h1 { font-size: 28px; font-weight: 700; line-height: 1.2; margin-bottom: 8px; }
+  .hero p { font-size: 14px; opacity: 0.8; margin-bottom: 20px; }
+  .hero-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; position: relative; z-index: 1; }
+  .hero-stat { background: rgba(255,255,255,0.15); border-radius: 10px; padding: 10px 6px; text-align: center; }
+  .hero-stat-val { font-size: 18px; font-weight: 700; display: block; }
+  .hero-stat-label { font-size: 10px; opacity: 0.8; display: block; margin-top: 2px; }
+
+  .legend { display: flex; gap: 8px; padding: 16px 16px 0; flex-wrap: wrap; }
+  .leg { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-muted); background: var(--card); border-radius: 20px; padding: 4px 10px; border: 1px solid var(--border); }
+  .leg-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+  .section-title { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); padding: 20px 16px 8px; }
+
+  .day-card { margin: 0 16px 10px; background: var(--card); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+  .day-card.fast { border-left: 3px solid var(--green); }
+  .day-header { display: flex; align-items: center; padding: 14px 16px; gap: 8px; cursor: pointer; -webkit-user-select: none; user-select: none; background: var(--card); }
+  .day-header:active { background: var(--bg); }
+  .day-name { font-size: 16px; font-weight: 600; color: var(--text); flex: 1; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+  .badge-fast { background: var(--green-light); color: var(--green-dark); }
+  .badge-tuna { background: var(--blue-light); color: var(--blue-dark); }
+  .badge-mack { background: #EAF3DE; color: #27500A; }
+  .badge-hake { background: var(--gray-light); color: var(--gray-dark); }
+  .day-kcal { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+  .chevron { font-size: 11px; color: #bbb; transition: transform 0.25s ease; margin-left: 2px; }
+  .chevron.open { transform: rotate(180deg); }
+
+  .day-body { display: none; }
+  .day-body.open { display: block; }
+
+  .macros-row { display: flex; gap: 6px; padding: 10px 16px; background: var(--bg); flex-wrap: wrap; }
+  .macro-chip { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; }
+  .chip-b { background: var(--blue-light); color: var(--blue-dark); }
+  .chip-f { background: var(--amber-light); color: var(--amber-dark); }
+  .chip-c { background: #EAF3DE; color: #27500A; }
+  .chip-kcal { background: var(--gray-light); color: var(--gray-dark); }
+
+  .meal { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+  .meal:last-child { border-bottom: none; }
+  .meal.protein-meal { background: var(--purple-light); }
+  .meal.protein-meal .meal-title { color: var(--purple-dark); }
+  .meal.protein-meal .item-name { color: var(--purple-dark); font-weight: 500; }
+  .meal.protein-meal .item-macro { color: var(--purple); }
+  .meal.protein-meal .meal-kcal-badge { background: white; color: var(--purple-dark); border-color: #d0cef8; }
+
+  .meal-header { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; }
+  .meal-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+  .icon-breakfast { background: #FFF3E0; }
+  .icon-lunch { background: #E3F2FD; }
+  .icon-snack { background: #F3E5F5; }
+  .icon-dinner { background: #E8F5E9; }
+  .icon-protein { background: var(--purple-light); }
+  .meal-title { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; flex: 1; }
+  .meal-kcal-badge { font-size: 11px; color: var(--text-muted); background: var(--bg); padding: 2px 7px; border-radius: 10px; border: 1px solid var(--border); }
+
+  .meal-item { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 0; font-size: 14px; border-bottom: 1px solid #f2f2f0; gap: 8px; }
+  .meal-item:last-child { border-bottom: none; }
+  .item-name { color: var(--text); flex: 1; }
+  .item-macro { color: var(--text-muted); font-size: 12px; text-align: right; white-space: nowrap; }
+
+  .tips-card { margin: 0 16px 10px; background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; }
+  .tips-header { padding: 14px 16px; cursor: pointer; display: flex; align-items: center; gap: 8px; -webkit-user-select: none; user-select: none; }
+  .tips-header:active { background: var(--bg); }
+  .tips-title { font-size: 15px; font-weight: 600; flex: 1; }
+  .tips-body { display: none; padding: 0 16px 16px; }
+  .tips-body.open { display: block; }
+  .tip-item { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+  .tip-item:last-child { border-bottom: none; }
+  .tip-item strong { color: var(--text); }
+
+  .footer { text-align: center; padding: 24px 16px 0; font-size: 12px; color: #bbb; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-label">Персональний раціон</div>
+  <h1>Тижневе меню</h1>
+  <p>~2100 ккал · дефіцит ~200 ккал · схуднення</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><span class="hero-stat-val">2100</span><span class="hero-stat-label">ккал/день</span></div>
+    <div class="hero-stat"><span class="hero-stat-val">~188г</span><span class="hero-stat-label">білки</span></div>
+    <div class="hero-stat"><span class="hero-stat-val">~60г</span><span class="hero-stat-label">жири</span></div>
+    <div class="hero-stat"><span class="hero-stat-val">~187г</span><span class="hero-stat-label">вуглеводи</span></div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="leg"><div class="leg-dot" style="background:#1D9E75;border-radius:3px;width:4px;height:12px;"></div>Пісний день</div>
+  <div class="leg"><div class="leg-dot" style="background:#378ADD;"></div>Тунець</div>
+  <div class="leg"><div class="leg-dot" style="background:#639922;"></div>Скумбрія</div>
+  <div class="leg"><div class="leg-dot" style="background:#888780;"></div>Хек</div>
+  <div class="leg"><div class="leg-dot" style="background:#7F77DD;"></div>Протеїн</div>
+</div>
+
+<div class="section-title">Пн — Нд</div>
+
+<!-- ПОНЕДІЛОК -->
+<div class="day-card fast">
+  <div class="day-header" onclick="toggle(this)">
+    <span class="day-name">Понеділок</span>
+    <span class="badge badge-fast">Пісний</span>
+    <span class="badge badge-tuna">Тунець</span>
+    <span class="day-kcal">~2095</span>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="day-body">
+    <div class="macros-row">
+      <span class="macro-chip chip-kcal">~2095 ккал</span>
+      <span class="macro-chip chip-b">Б ~183г</span>
+      <span class="macro-chip chip-f">Ж ~43г</span>
+      <span class="macro-chip chip-c">В ~192г</span>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-breakfast">🍳</div><span class="meal-title">Сніданок</span><span class="meal-kcal-badge">~410 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Омлет із 4 яєць</span><span class="item-macro">Б 28г · Ж 18г</span></div>
+      <div class="meal-item"><span class="item-name">1 тост цільнозерновий</span><span class="item-macro">В 14г</span></div>
+      <div class="meal-item"><span class="item-name">Помідор + огірок</span><span class="item-macro">В 8г</span></div>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-lunch">🥗</div><span class="meal-title">Обід</span><span class="meal-kcal-badge">~680 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Тунець консерва у воді 200 г</span><span class="item-macro">Б 46г · Ж 2г</span></div>
+      <div class="meal-item"><span class="item-name">Гречка варена 200 г</span><span class="item-macro">Б 10г · В 54г</span></div>
+      <div class="meal-item"><span class="item-name">Шпинат + 1 ч.л. оливкової олії</span><span class="item-macro">Ж 5г</span></div>
+      <div class="meal-item"><span class="item-name">2 яйця варені</span><span class="item-macro">Б 12г · Ж 10г</span></div>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-snack">🍌</div><span class="meal-title">Полудень</span><span class="meal-kcal-badge">~290 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Йогурт натуральний 200 г</span><span class="item-macro">Б 10г · Ж 4г</span></div>
+      <div class="meal-item"><span class="item-name">Банан</span><span class="item-macro">В 27г</span></div>
+      <div class="meal-item"><span class="item-name">Горіхи 10 г</span><span class="item-macro">Ж 6г</span></div>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-dinner">🐟</div><span class="meal-title">Вечеря</span><span class="meal-kcal-badge">~610 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Тунець консерва 180 г</span><span class="item-macro">Б 41г · Ж 2г</span></div>
+      <div class="meal-item"><span class="item-name">Кіноа варена 175 г</span><span class="item-macro">Б 9г · В 45г</span></div>
+      <div class="meal-item"><span class="item-name">Броколі + морква 200 г</span><span class="item-macro">В 14г</span></div>
+      <div class="meal-item"><span class="item-name">1 ч.л. оливкової олії</span><span class="item-macro">Ж 5г</span></div>
+    </div>
+    <div class="meal protein-meal">
+      <div class="meal-header"><div class="meal-icon icon-protein">💪</div><span class="meal-title">Протеїн</span><span class="meal-kcal-badge">~115 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Протеїн 30 г + 250 мл води</span><span class="item-macro">Б 22.8г · Ж 1.9г · В 1.6г</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ВІВТОРОК -->
+<div class="day-card">
+  <div class="day-header" onclick="toggle(this)">
+    <span class="day-name">Вівторок</span>
+    <span class="badge badge-mack">Скумбрія</span>
+    <span class="day-kcal">~2115</span>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="day-body">
+    <div class="macros-row">
+      <span class="macro-chip chip-kcal">~2115 ккал</span>
+      <span class="macro-chip chip-b">Б ~160г</span>
+      <span class="macro-chip chip-f">Ж ~56г</span>
+      <span class="macro-chip chip-c">В ~204г</span>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-breakfast">🥣</div><span class="meal-title">Сніданок</span><span class="meal-kcal-badge">~390 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Вівсянка 60 г (на воді)</span><span class="item-macro">Б 8г · В 40г</span></div>
+      <div class="meal-item"><span class="item-name">1 яйце варене</span><span class="item-macro">Б 6г · Ж 5г</span></div>
+      <div class="meal-item"><span class="item-name">1 ч.л. меду + яблуко</span><span class="item-macro">В 20г</span></div>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-lunch">🍗</div><span class="meal-title">Обід</span><span class="meal-kcal-badge">~600 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Куряча грудка 180 г</span><span class="item-macro">Б 41г · Ж 4г</span></div>
+      <div class="meal-item"><span class="item-name">Рис бурий варений 240 г</span><span class="item-macro">Б 6г · В 62г</span></div>
+      <div class="meal-item"><span class="item-name">Огірок + помідор</span><span class="item-macro">В 8г</span></div>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-snack">🧀</div><span class="meal-title">Полудень</span><span class="meal-kcal-badge">~280 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Сир кисломолочний 5% 150 г</span><span class="item-macro">Б 17г · Ж 8г</span></div>
+      <div class="meal-item"><span class="item-name">Горіхи 15 г</span><span class="item-macro">Б 3г · Ж 9г</span></div>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-dinner">🐠</div><span class="meal-title">Вечеря</span><span class="meal-kcal-badge">~730 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Скумбрія запечена 180 г</span><span class="item-macro">Б 34г · Ж 22г</span></div>
+      <div class="meal-item"><span class="item-name">Гречка варена 175 г</span><span class="item-macro">Б 9г · В 47г</span></div>
+      <div class="meal-item"><span class="item-name">Овочі на пару 150 г</span><span class="item-macro">В 12г</span></div>
+      <div class="meal-item"><span class="item-name">Лимон + спеції</span><span class="item-macro">—</span></div>
+    </div>
+    <div class="meal protein-meal">
+      <div class="meal-header"><div class="meal-icon icon-protein">💪</div><span class="meal-title">Протеїн</span><span class="meal-kcal-badge">~115 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Протеїн 30 г + 250 мл води</span><span class="item-macro">Б 22.8г · Ж 1.9г · В 1.6г</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- СЕРЕДА -->
+<div class="day-card fast">
+  <div class="day-header" onclick="toggle(this)">
+    <span class="day-name">Середа</span>
+    <span class="badge badge-fast">Пісний</span>
+    <span class="badge badge-hake">Хек</span>
+    <span class="day-kcal">~2085</span>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="day-body">
+    <div class="macros-row">
+      <span class="macro-chip chip-kcal">~2085 ккал</span>
+      <span class="macro-chip chip-b">Б ~178г</span>
+      <span class="macro-chip chip-f">Ж ~43г</span>
+      <span class="macro-chip chip-c">В ~188г</span>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-breakfast">🍳</div><span class="meal-title">Сніданок</span><span class="meal-kcal-badge">~410 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Омлет із 4 яєць</span><span class="item-macro">Б 28г · Ж 18г</span></div>
+      <div class="meal-item"><span class="item-name">Помідор + огірок</span><span class="item-macro">В 8г</span></div>
+      <div class="meal-item"><span class="item-name">1 тост цільнозерновий</span><span class="item-macro">В 14г</span></div>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-lunch">🥗</div><span class="meal-title">Обід</span><span class="meal-kcal-badge">~650 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Хек запечений 250 г</span><span class="item-macro">Б 45г · Ж 3г</span></div>
+      <div class="meal-item"><span class="item-name">Гречка варена 200 г</span><span class="item-macro">Б 10г · В 54г</span></div>
+      <div class="meal-item"><span class="item-name">Шпинат + 1 ч.л. олії</span><span class="item-macro">Ж 5г</span></div>
+      <div class="meal-item"><span class="item-name">2 яйця варені</span><span class="item-macro">Б 12г · Ж 10г</span></div>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-snack">🍌</div><span class="meal-title">Полудень</span><span class="meal-kcal-badge">~290 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Йогурт 200 г</span><span class="item-macro">Б 10г · Ж 4г</span></div>
+      <div class="meal-item"><span class="item-name">Горіхи 15 г</span><span class="item-macro">Ж 9г</span></div>
+      <div class="meal-item"><span class="item-name">Банан</span><span class="item-macro">В 27г</span></div>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-dinner">🐟</div><span class="meal-title">Вечеря</span><span class="meal-kcal-badge">~620 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Хек запечений 200 г</span><span class="item-macro">Б 36г · Ж 2г</span></div>
+      <div class="meal-item"><span class="item-name">Кіноа варена 175 г</span><span class="item-macro">Б 9г · В 45г</span></div>
+      <div class="meal-item"><span class="item-name">Броколі + цвітна капуста 200 г</span><span class="item-macro">В 14г</span></div>
+      <div class="meal-item"><span class="item-name">1 ч.л. олії</span><span class="item-macro">Ж 5г</span></div>
+    </div>
+    <div class="meal protein-meal">
+      <div class="meal-header"><div class="meal-icon icon-protein">💪</div><span class="meal-title">Протеїн</span><span class="meal-kcal-badge">~115 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Протеїн 30 г + 250 мл води</span><span class="item-macro">Б 22.8г · Ж 1.9г · В 1.6г</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ЧЕТВЕР -->
+<div class="day-card">
+  <div class="day-header" onclick="toggle(this)">
+    <span class="day-name">Четвер</span>
+    <span class="badge badge-tuna">Тунець</span>
+    <span class="day-kcal">~2115</span>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="day-body">
+    <div class="macros-row">
+      <span class="macro-chip chip-kcal">~2115 ккал</span>
+      <span class="macro-chip chip-b">Б ~175г</span>
+      <span class="macro-chip chip-f">Ж ~38г</span>
+      <span class="macro-chip chip-c">В ~198г</span>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-breakfast">🥣</div><span class="meal-title">Сніданок</span><span class="meal-kcal-badge">~420 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Вівсянка 60 г</span><span class="item-macro">Б 8г · В 40г</span></div>
+      <div class="meal-item"><span class="item-name">2 яйця варені</span><span class="item-macro">Б 12г · Ж 10г</span></div>
+      <div class="meal-item"><span class="item-name">Яблуко</span><span class="item-macro">В 18г</span></div>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-lunch">🍗</div><span class="meal-title">Обід</span><span class="meal-kcal-badge">~635 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Куряча грудка 200 г</span><span class="item-macro">Б 46г · Ж 4г</span></div>
+      <div class="meal-item"><span class="item-name">Гречка варена 200 г</span><span class="item-macro">Б 10г · В 54г</span></div>
+      <div class="meal-item"><span class="item-name">Шпинат + 1 ч.л. олії</span><span class="item-macro">Ж 5г</span></div>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-snack">🧀</div><span class="meal-title">Полудень</span><span class="meal-kcal-badge">~290 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Сир кисломолочний 5% 150 г</span><span class="item-macro">Б 17г · Ж 8г</span></div>
+      <div class="meal-item"><span class="item-name">Банан</span><span class="item-macro">В 27г</span></div>
+      <div class="meal-item"><span class="item-name">Горіхи 10 г</span><span class="item-macro">Ж 6г</span></div>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-dinner">🐟</div><span class="meal-title">Вечеря</span><span class="meal-kcal-badge">~655 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Тунець консерва 180 г</span><span class="item-macro">Б 41г · Ж 2г</span></div>
+      <div class="meal-item"><span class="item-name">Рис бурий варений 210 г</span><span class="item-macro">Б 5г · В 54г</span></div>
+      <div class="meal-item"><span class="item-name">Морква + кабачок 200 г</span><span class="item-macro">В 14г</span></div>
+      <div class="meal-item"><span class="item-name">1 ч.л. олії</span><span class="item-macro">Ж 5г</span></div>
+    </div>
+    <div class="meal protein-meal">
+      <div class="meal-header"><div class="meal-icon icon-protein">💪</div><span class="meal-title">Протеїн</span><span class="meal-kcal-badge">~115 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Протеїн 30 г + 250 мл води</span><span class="item-macro">Б 22.8г · Ж 1.9г · В 1.6г</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- П'ЯТНИЦЯ -->
+<div class="day-card fast">
+  <div class="day-header" onclick="toggle(this)">
+    <span class="day-name">П'ятниця</span>
+    <span class="badge badge-fast">Пісний</span>
+    <span class="badge badge-mack">Скумбрія</span>
+    <span class="day-kcal">~2105</span>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="day-body">
+    <div class="macros-row">
+      <span class="macro-chip chip-kcal">~2105 ккал</span>
+      <span class="macro-chip chip-b">Б ~151г</span>
+      <span class="macro-chip chip-f">Ж ~63г</span>
+      <span class="macro-chip chip-c">В ~168г</span>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-breakfast">🍳</div><span class="meal-title">Сніданок</span><span class="meal-kcal-badge">~410 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Омлет із 4 яєць</span><span class="item-macro">Б 28г · Ж 18г</span></div>
+      <div class="meal-item"><span class="item-name">1 тост цільнозерновий</span><span class="item-macro">В 14г</span></div>
+      <div class="meal-item"><span class="item-name">Огірок + помідор</span><span class="item-macro">В 8г</span></div>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-lunch">🥗</div><span class="meal-title">Обід</span><span class="meal-kcal-badge">~720 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Скумбрія запечена 200 г</span><span class="item-macro">Б 38г · Ж 25г</span></div>
+      <div class="meal-item"><span class="item-name">Гречка варена 200 г</span><span class="item-macro">Б 10г · В 54г</span></div>
+      <div class="meal-item"><span class="item-name">Шпинат + 1 ч.л. олії</span><span class="item-macro">Ж 5г</span></div>
+      <div class="meal-item"><span class="item-name">1 яйце варене</span><span class="item-macro">Б 6г · Ж 5г</span></div>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-snack">🍊</div><span class="meal-title">Полудень</span><span class="meal-kcal-badge">~270 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Йогурт 200 г</span><span class="item-macro">Б 10г · Ж 4г</span></div>
+      <div class="meal-item"><span class="item-name">Горіхи 15 г</span><span class="item-macro">Ж 9г</span></div>
+      <div class="meal-item"><span class="item-name">Груша або апельсин</span><span class="item-macro">В 22г</span></div>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-dinner">🐠</div><span class="meal-title">Вечеря</span><span class="meal-kcal-badge">~590 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Скумбрія запечена 150 г</span><span class="item-macro">Б 28г · Ж 19г</span></div>
+      <div class="meal-item"><span class="item-name">Кіноа варена 150 г</span><span class="item-macro">Б 8г · В 39г</span></div>
+      <div class="meal-item"><span class="item-name">Броколі + морква 200 г</span><span class="item-macro">В 14г</span></div>
+      <div class="meal-item"><span class="item-name">Лимон + 1 ч.л. олії</span><span class="item-macro">Ж 5г</span></div>
+    </div>
+    <div class="meal protein-meal">
+      <div class="meal-header"><div class="meal-icon icon-protein">💪</div><span class="meal-title">Протеїн</span><span class="meal-kcal-badge">~115 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Протеїн 30 г + 250 мл води</span><span class="item-macro">Б 22.8г · Ж 1.9г · В 1.6г</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- СУБОТА -->
+<div class="day-card">
+  <div class="day-header" onclick="toggle(this)">
+    <span class="day-name">Субота</span>
+    <span class="badge badge-hake">Хек</span>
+    <span class="day-kcal">~2085</span>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="day-body">
+    <div class="macros-row">
+      <span class="macro-chip chip-kcal">~2085 ккал</span>
+      <span class="macro-chip chip-b">Б ~169г</span>
+      <span class="macro-chip chip-f">Ж ~40г</span>
+      <span class="macro-chip chip-c">В ~192г</span>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-breakfast">🥣</div><span class="meal-title">Сніданок</span><span class="meal-kcal-badge">~440 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Вівсянка 70 г</span><span class="item-macro">Б 10г · В 48г</span></div>
+      <div class="meal-item"><span class="item-name">2 яйця варені</span><span class="item-macro">Б 12г · Ж 10г</span></div>
+      <div class="meal-item"><span class="item-name">Ягоди або яблуко + 1 ч.л. меду</span><span class="item-macro">В 22г</span></div>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-lunch">🥩</div><span class="meal-title">Обід</span><span class="meal-kcal-badge">~610 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Яловичина нежирна 180 г (тушкована)</span><span class="item-macro">Б 36г · Ж 9г</span></div>
+      <div class="meal-item"><span class="item-name">Гречка варена 200 г</span><span class="item-macro">Б 10г · В 54г</span></div>
+      <div class="meal-item"><span class="item-name">Шпинат + 1 ч.л. олії</span><span class="item-macro">Ж 5г</span></div>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-snack">🧀</div><span class="meal-title">Полудень</span><span class="meal-kcal-badge">~290 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Сир кисломолочний 5% 150 г</span><span class="item-macro">Б 17г · Ж 8г</span></div>
+      <div class="meal-item"><span class="item-name">Банан</span><span class="item-macro">В 27г</span></div>
+      <div class="meal-item"><span class="item-name">Горіхи 10 г</span><span class="item-macro">Ж 6г</span></div>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-dinner">🐟</div><span class="meal-title">Вечеря</span><span class="meal-kcal-badge">~630 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Хек запечений 220 г</span><span class="item-macro">Б 40г · Ж 2г</span></div>
+      <div class="meal-item"><span class="item-name">Рис бурий варений 210 г</span><span class="item-macro">Б 5г · В 54г</span></div>
+      <div class="meal-item"><span class="item-name">Кабачок + цвітна капуста 200 г</span><span class="item-macro">В 14г</span></div>
+      <div class="meal-item"><span class="item-name">1 ч.л. олії</span><span class="item-macro">Ж 5г</span></div>
+    </div>
+    <div class="meal protein-meal">
+      <div class="meal-header"><div class="meal-icon icon-protein">💪</div><span class="meal-title">Протеїн</span><span class="meal-kcal-badge">~115 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Протеїн 30 г + 250 мл води</span><span class="item-macro">Б 22.8г · Ж 1.9г · В 1.6г</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- НЕДІЛЯ -->
+<div class="day-card">
+  <div class="day-header" onclick="toggle(this)">
+    <span class="day-name">Неділя</span>
+    <span class="badge badge-tuna">Тунець</span>
+    <span class="day-kcal">~2105</span>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="day-body">
+    <div class="macros-row">
+      <span class="macro-chip chip-kcal">~2105 ккал</span>
+      <span class="macro-chip chip-b">Б ~167г</span>
+      <span class="macro-chip chip-f">Ж ~61г</span>
+      <span class="macro-chip chip-c">В ~185г</span>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-breakfast">🍳</div><span class="meal-title">Сніданок</span><span class="meal-kcal-badge">~410 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Омлет із 4 яєць</span><span class="item-macro">Б 28г · Ж 18г</span></div>
+      <div class="meal-item"><span class="item-name">Помідор + огірок</span><span class="item-macro">В 8г</span></div>
+      <div class="meal-item"><span class="item-name">1 тост цільнозерновий</span><span class="item-macro">В 14г</span></div>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-lunch">🍗</div><span class="meal-title">Обід</span><span class="meal-kcal-badge">~580 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Куряча грудка 200 г</span><span class="item-macro">Б 46г · Ж 4г</span></div>
+      <div class="meal-item"><span class="item-name">Картопля варена 200 г</span><span class="item-macro">Б 4г · В 38г</span></div>
+      <div class="meal-item"><span class="item-name">Зелень + 1 ч.л. олії</span><span class="item-macro">Ж 5г</span></div>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-snack">🍊</div><span class="meal-title">Полудень</span><span class="meal-kcal-badge">~270 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Йогурт 200 г</span><span class="item-macro">Б 10г · Ж 4г</span></div>
+      <div class="meal-item"><span class="item-name">Горіхи 15 г</span><span class="item-macro">Ж 9г</span></div>
+      <div class="meal-item"><span class="item-name">Апельсин</span><span class="item-macro">В 18г</span></div>
+    </div>
+    <div class="meal">
+      <div class="meal-header"><div class="meal-icon icon-dinner">🐟</div><span class="meal-title">Вечеря</span><span class="meal-kcal-badge">~730 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Тунець консерва 180 г</span><span class="item-macro">Б 41г · Ж 2г</span></div>
+      <div class="meal-item"><span class="item-name">Кіноа варена 175 г</span><span class="item-macro">Б 9г · В 45г</span></div>
+      <div class="meal-item"><span class="item-name">Броколі + морква 200 г</span><span class="item-macro">В 14г</span></div>
+      <div class="meal-item"><span class="item-name">Авокадо ¼ + 1 ч.л. олії</span><span class="item-macro">Ж 12г</span></div>
+    </div>
+    <div class="meal protein-meal">
+      <div class="meal-header"><div class="meal-icon icon-protein">💪</div><span class="meal-title">Протеїн</span><span class="meal-kcal-badge">~115 ккал</span></div>
+      <div class="meal-item"><span class="item-name">Протеїн 30 г + 250 мл води</span><span class="item-macro">Б 22.8г · Ж 1.9г · В 1.6г</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="section-title">Поради</div>
+<div class="tips-card">
+  <div class="tips-header" onclick="toggleTips(this)">
+    <span style="font-size:18px;">💡</span>
+    <span class="tips-title">Корисні поради</span>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="tips-body">
+    <div class="tip-item"><strong>Крупи — грами для вже вареного.</strong> Всі грами в цьому меню для готової каші. Сирого потрібно: гречка ÷2.5, рис бурий ÷3, кіноа ÷2.5.</div>
+    <div class="tip-item"><strong>Протеїн — коли пити.</strong> Найкраще після тренування або ввечері. Розмішуйте у 250 мл холодної води або нежирного молока.</div>
+    <div class="tip-item"><strong>Тунець — у воді, не в олії.</strong> Консерви в олії майже вдвічі калорійніші.</div>
+    <div class="tip-item"><strong>Meal prep.</strong> Відваріть гречку та рис на 2–3 дні наперед. Зберігати в холодильнику до 4 діб.</div>
+    <div class="tip-item"><strong>Вода.</strong> Мінімум 2 літри на день, особливо у пісні дні та в дні з протеїном.</div>
+    <div class="tip-item"><strong>Спеції.</strong> Лимон, часник, куркума, паприка не додають калорій але дають смак.</div>
+    <div class="tip-item"><strong>Йогурт і сир — натуральні.</strong> Без цукру і фруктових добавок.</div>
+  </div>
+</div>
+
+<div class="footer">
+  Раціон під параметри 2300 ккал · Б 190г · Ж 75г · В 220г<br>
+  Протеїн 30г/день включено · дефіцит ~200 ккал
+</div>
+
+<script>
+function toggle(header) {
+  const body = header.nextElementSibling;
+  const chevron = header.querySelector('.chevron');
+  const isOpen = body.classList.contains('open');
+  document.querySelectorAll('.day-body').forEach(b => b.classList.remove('open'));
+  document.querySelectorAll('.day-header .chevron').forEach(c => c.classList.remove('open'));
+  if (!isOpen) {
+    body.classList.add('open');
+    chevron.classList.add('open');
+    setTimeout(() => body.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+  }
+}
+function toggleTips(header) {
+  const body = header.nextElementSibling;
+  const chevron = header.querySelector('.chevron');
+  body.classList.toggle('open');
+  chevron.classList.toggle('open');
+}
+</script>
+</body>
+</html>
